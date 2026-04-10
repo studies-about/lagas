@@ -1,17 +1,19 @@
 import { motion } from "framer-motion";
-import { ShoppingCart, Store, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, Store, CheckCircle2, Save, CheckCheck } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRoute, getKitConfig, generarSecciones, buildSectionItems } from "@/lib/routeStore";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 
 // ─── store mapping ────────────────────────────────────────────────────────────
 
 const storeMap: Record<string, string> = {
-  "Gel de maltodextrina": "iHerb",
-  "Gel de cafeína": "iHerb",
+  "Gel de maltodextrina": "Lista",
+  "Gel de cafeína": "Lista",
   "Barrita energética": "Decathlon",
   "Barrita de arroz": "Supermercado",
-  "Bidón isotónico": "iHerb",
+  "Bidón isotónico": "Lista",
   "Plátano (en control)": "Verdulería",
   "Frutos secos mix": "Supermercado",
   "Bocadillo dulce membrillo": "Supermercado",
@@ -74,20 +76,38 @@ const Compras = () => {
   const navigate = useNavigate();
   const route = getRoute();
   const carbTarget = getKitConfig();
+  const { user } = useAuth();
 
   const initial = route ? buildShoppingList(route.distancia, route.desnivel, carbTarget) : [];
   const [items, setItems] = useState(initial);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const toggle = (id: number) =>
     setItems(items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)));
 
   const checked = items.filter((i) => i.checked).length;
 
-  // Group by store
   const byStore = items.reduce<Record<string, typeof items>>((acc, item) => {
     (acc[item.store] ??= []).push(item);
     return acc;
   }, {});
+
+  async function handleSaveRoute() {
+    if (!route || !user) return;
+    setSaving(true);
+    await supabase.from("routes").upsert({
+      user_id: user.id,
+      name: route.name,
+      distance_km: route.distancia,
+      elevation_m: route.desnivel,
+      date: route.fecha ?? null,
+      strava_id: null,
+    }, { onConflict: "user_id,strava_id" });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
 
   return (
     <div className="space-y-4">
@@ -128,17 +148,47 @@ const Compras = () => {
             </div>
           </motion.div>
 
-          {/* CTA */}
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.05 }}
-            className="w-full gradient-energy text-primary-foreground px-3 py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-transform"
-          >
-            Comprar kit completo con LAGAS
-          </motion.button>
+          {/* Botones de acción */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="flex gap-2">
+            {/* Guardar ruta */}
+            {user ? (
+              <button
+                onClick={handleSaveRoute}
+                disabled={saving || saved}
+                className={`flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                  saved
+                    ? "bg-green-500/10 text-green-600 border border-green-500/30"
+                    : "bg-card border border-border active:border-primary"
+                }`}
+              >
+                {saved ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {saved ? "Guardada" : saving ? "Guardando..." : "Guardar ruta"}
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/perfil")}
+                className="flex-1 bg-card border border-border py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:border-primary transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                Iniciar sesión para guardar
+              </button>
+            )}
 
-          {/* Items grouped by store */}
+            {/* Comprar con LAGAS — próximamente */}
+            <div className="relative flex-1">
+              <button
+                disabled
+                className="w-full gradient-energy text-primary-foreground/50 px-3 py-3 rounded-xl text-sm font-semibold opacity-50 cursor-not-allowed"
+              >
+                Kit con LAGAS
+              </button>
+              <span className="absolute -top-2 right-1 bg-muted border border-border text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full">
+                Próximamente
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Items agrupados por tienda */}
           {Object.entries(byStore).map(([store, storeItems], gi) => (
             <motion.div
               key={store}

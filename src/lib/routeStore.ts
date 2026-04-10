@@ -6,6 +6,8 @@ export interface RouteData {
   desnivel: number;  // m D+
   tiempo: string;    // formatted "Xh Ym"
   source: "manual" | "strava";
+  fecha?: string;    // ISO date "YYYY-MM-DD"
+  hora?: string;     // "HH:MM"
 }
 
 export function saveRoute(data: RouteData) {

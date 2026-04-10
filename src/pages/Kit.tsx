@@ -49,7 +49,7 @@ function NoRoute() {
 const Kit = () => {
   const route = getRoute();
   const [selectedCarbs, setSelectedCarbs] = useState<CarbTarget>(getKitConfig());
-  const [expandedSection, setExpandedSection] = useState<number | null>(0);
+  const [expandedSection, setExpandedSection] = useState<number | null>(null);
   const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["maillot"]));
 
   if (!route) return (
@@ -203,21 +203,32 @@ const Kit = () => {
 
               {expandedSection === si && (
                 <div className="divide-y divide-border/50">
-                  {section.items.map((item, i) => (
-                    <div key={i} className="px-4 py-2.5 flex items-center gap-2 text-xs">
-                      <span className="flex-1">{item.name}</span>
-                      <span className="text-muted-foreground font-mono text-[10px]">{item.qty}</span>
-                      {item.storage === "llevar" ? (
-                        <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded">
-                          Llevar
+                  {section.items.map((item, i) => {
+                    const location = item.storage === "ruta"
+                      ? "En control"
+                      : item.name.includes("Bidón")
+                        ? (selectedStorage.has("frame") ? "Frame bag" : "Maillot")
+                        : item.name.includes("Barrita")
+                          ? (selectedStorage.has("frame") ? "Frame bag" : selectedStorage.has("maillot") ? "Maillot" : "Top tube")
+                          : selectedStorage.has("maillot")
+                            ? "Maillot"
+                            : selectedStorage.has("toptube")
+                              ? "Top tube"
+                              : "Frame bag";
+                    return (
+                      <div key={i} className="px-4 py-2.5 flex items-center gap-2 text-xs">
+                        <span className="flex-1">{item.name}</span>
+                        <span className="text-muted-foreground font-mono text-[10px]">{item.qty}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded ${
+                          item.storage === "ruta"
+                            ? "bg-accent/10 text-accent"
+                            : "bg-primary/10 text-primary"
+                        }`}>
+                          {location}
                         </span>
-                      ) : (
-                        <span className="bg-accent/10 text-accent text-[10px] px-2 py-0.5 rounded">
-                          En ruta
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>

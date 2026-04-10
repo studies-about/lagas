@@ -108,21 +108,26 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="bg-muted/50 rounded-xl p-3 text-center">
+          <div className="bg-muted/50 rounded-xl p-3 text-center opacity-50">
             <p className="text-xs font-bold">Randonneur</p>
             <p className="text-[10px] text-muted-foreground">$19.900/mes</p>
           </div>
-          <div className="gradient-dark rounded-xl p-3 text-center border border-primary/30">
+          <div className="gradient-dark rounded-xl p-3 text-center border border-primary/30 opacity-50">
             <p className="text-xs font-bold text-primary-foreground">Super Randonneur</p>
             <p className="text-[10px] text-primary-foreground/60">$34.900/mes</p>
           </div>
         </div>
-        <button
-          onClick={() => navigate("/suscripcion")}
-          className="w-full border border-border text-foreground py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:border-primary active:text-primary transition-colors"
-        >
-          Ver planes y kits <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="relative">
+          <button
+            disabled
+            className="w-full border border-border text-muted-foreground py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
+          >
+            Ver planes y kits <ArrowRight className="w-4 h-4" />
+          </button>
+          <span className="absolute -top-2 right-3 bg-muted border border-border text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full">
+            Próximamente
+          </span>
+        </div>
       </motion.div>
     </div>
   );

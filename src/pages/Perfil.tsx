@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Pencil, Check, X, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -14,9 +14,17 @@ interface Profile {
   dietary_type: string | null;
 }
 
+const cyclistOptions = ["amateur", "entrenado", "competitivo"];
+const ageOptions = ["18-25", "26-35", "36-45", "46-55", "56+"];
+const dietOptions = ["omnivoro", "vegetariano", "vegano"];
+
 const Perfil = () => {
   const { user, isConnected, connect, disconnect } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Partial<Profile>>({});
+  const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -28,6 +36,21 @@ const Perfil = () => {
       .then(({ data }) => setProfile(data));
   }, [user]);
 
+  async function handleSave() {
+    if (!user) return;
+    setSaving(true);
+    await supabase.from("profiles").update(draft).eq("id", user.id);
+    setProfile((p) => p ? { ...p, ...draft } : p);
+    setEditing(false);
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!user) return;
+    await supabase.from("profiles").delete().eq("id", user.id);
+    disconnect();
+  }
+
   if (!isConnected) {
     return (
       <div className="space-y-4">
@@ -35,7 +58,6 @@ const Perfil = () => {
           <h1 className="text-xl font-bold mb-1">Perfil Ciclista</h1>
           <p className="text-xs text-muted-foreground">Inicia sesión para ver tu perfil</p>
         </motion.div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -70,7 +92,7 @@ const Perfil = () => {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold mb-1">Perfil Ciclista</h1>
-          <p className="text-xs text-muted-foreground">Tu nivel, objetivos y preferencias alimentarias</p>
+          <p className="text-xs text-muted-foreground">Tu nivel y preferencias alimentarias</p>
         </div>
         <button
           onClick={disconnect}
@@ -96,25 +118,123 @@ const Perfil = () => {
         </div>
       </motion.div>
 
-      {/* Datos del perfil */}
+      {/* Datos editables */}
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-2xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <User className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">Datos del ciclista</h2>
-        </div>
-        <div className="space-y-2">
-          {[
-            ["Tipo de ciclista", profile?.cyclist_type],
-            ["Rango de edad", profile?.age_range],
-            ["Km semanales", profile?.weekly_km ? `${profile.weekly_km} km` : null],
-            ["Alimentación", profile?.dietary_type],
-          ].map(([label, value]) => (
-            <div key={label as string} className="flex justify-between text-sm">
-              <span className="text-muted-foreground text-xs">{label as string}</span>
-              <span className="font-medium text-xs">{(value as string) ?? <span className="text-muted-foreground italic">Sin completar</span>}</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">Datos del ciclista</h2>
+          </div>
+          {!editing ? (
+            <button onClick={() => { setDraft({}); setEditing(true); }} className="flex items-center gap-1 text-xs text-primary">
+              <Pencil className="w-3 h-3" /> Editar
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button onClick={() => setEditing(false)} className="text-muted-foreground">
+                <X className="w-4 h-4" />
+              </button>
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 text-xs text-primary font-semibold">
+                <Check className="w-3.5 h-3.5" /> {saving ? "Guardando..." : "Guardar"}
+              </button>
             </div>
-          ))}
+          )}
         </div>
+
+        <div className="space-y-3">
+          {/* Tipo de ciclista */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">Tipo de ciclista</p>
+            {editing ? (
+              <div className="flex gap-1.5 flex-wrap">
+                {cyclistOptions.map((o) => (
+                  <button key={o} onClick={() => setDraft((d) => ({ ...d, cyclist_type: o }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${(draft.cyclist_type ?? profile?.cyclist_type) === o ? "gradient-energy text-primary-foreground" : "bg-muted"}`}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm font-medium">{profile?.cyclist_type ?? <span className="text-muted-foreground text-xs italic">Sin completar</span>}</p>
+            )}
+          </div>
+
+          {/* Rango de edad */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">Rango de edad</p>
+            {editing ? (
+              <div className="flex gap-1.5 flex-wrap">
+                {ageOptions.map((o) => (
+                  <button key={o} onClick={() => setDraft((d) => ({ ...d, age_range: o }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${(draft.age_range ?? profile?.age_range) === o ? "gradient-energy text-primary-foreground" : "bg-muted"}`}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm font-medium">{profile?.age_range ?? <span className="text-muted-foreground text-xs italic">Sin completar</span>}</p>
+            )}
+          </div>
+
+          {/* Km semanales */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">Km semanales</p>
+            {editing ? (
+              <input
+                type="number"
+                placeholder="ej: 200"
+                defaultValue={profile?.weekly_km ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, weekly_km: parseInt(e.target.value) || null }))}
+                className="w-full bg-muted rounded-lg px-3 py-2 text-sm border-0 outline-none"
+              />
+            ) : (
+              <p className="text-sm font-medium">{profile?.weekly_km ? `${profile.weekly_km} km` : <span className="text-muted-foreground text-xs italic">Sin completar</span>}</p>
+            )}
+          </div>
+
+          {/* Alimentación */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">Tipo de alimentación</p>
+            {editing ? (
+              <div className="flex gap-1.5 flex-wrap">
+                {dietOptions.map((o) => (
+                  <button key={o} onClick={() => setDraft((d) => ({ ...d, dietary_type: o }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${(draft.dietary_type ?? profile?.dietary_type) === o ? "gradient-energy text-primary-foreground" : "bg-muted"}`}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm font-medium">{profile?.dietary_type ?? <span className="text-muted-foreground text-xs italic">Sin completar</span>}</p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Eliminar cuenta */}
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center justify-center gap-2 text-xs text-destructive py-3 rounded-xl border border-destructive/20 active:bg-destructive/5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Eliminar cuenta
+          </button>
+        ) : (
+          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-3">
+            <p className="text-sm font-semibold text-destructive">¿Eliminar tu cuenta?</p>
+            <p className="text-xs text-muted-foreground">Se borrarán tus rutas y datos. Esta acción no se puede deshacer.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-card border border-border py-2.5 rounded-xl text-xs font-semibold">
+                Cancelar
+              </button>
+              <button onClick={handleDelete} className="flex-1 bg-destructive text-destructive-foreground py-2.5 rounded-xl text-xs font-semibold">
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

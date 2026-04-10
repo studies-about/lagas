@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Bike, MapPin, Mountain, Clock, Upload, ArrowRight, SlidersHorizontal, Unlink } from "lucide-react";
+import { Bike, MapPin, Mountain, Clock, ArrowRight, SlidersHorizontal, Unlink, Droplets, CloudRain, Thermometer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/hooks/useAuth";
 import { useStravaAuth } from "@/hooks/useStravaAuth";
@@ -94,16 +94,69 @@ function EmptyState({ onManual, onGoogle, googleConnected }: {
   );
 }
 
+interface Weather {
+  temp: number;
+  precip: number;
+}
+
+function buildCalendar() {
+  const days: Date[] = [];
+  const today = new Date();
+  for (let i = 0; i < 21; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
+function toISO(d: Date) {
+  return d.toISOString().split("T")[0];
+}
+
 function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () => void }) {
   const [distancia, setDistancia] = useState(100);
   const [desnivel, setDesnivel] = useState(1000);
+  const [fecha, setFecha] = useState<Date>(new Date());
+  const [hora, setHora] = useState("08:00");
+  const [weather, setWeather] = useState<Weather | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const tiempo = estimarTiempo(distancia, desnivel);
-  const etapas = generarSecciones(distancia);
+  const days = buildCalendar();
+  const diasSemana = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"];
+  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!coords) return;
+    const iso = toISO(fecha);
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&daily=temperature_2m_max,precipitation_probability_max&timezone=auto&start_date=${iso}&end_date=${iso}&forecast_days=16`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        const temp = data?.daily?.temperature_2m_max?.[0];
+        const precip = data?.daily?.precipitation_probability_max?.[0];
+        if (temp != null) setWeather({ temp: Math.round(temp), precip: precip ?? 0 });
+        else setWeather(null);
+      })
+      .catch(() => setWeather(null));
+  }, [coords, fecha]);
 
   function handleConfirm() {
-    saveRoute({ name: "Ruta manual", distancia, desnivel, tiempo, source: "manual" });
+    saveRoute({ name: "Ruta manual", distancia, desnivel, tiempo, source: "manual", fecha: toISO(fecha), hora });
     onConfirm();
   }
+
+  const isToday = (d: Date) => toISO(d) === toISO(new Date());
+  const isSelected = (d: Date) => toISO(d) === toISO(fecha);
 
   return (
     <div className="space-y-4">
@@ -118,9 +171,9 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
             </div>
             <span className="text-lg font-bold text-primary">{distancia} km</span>
           </div>
-          <Slider min={20} max={500} step={10} value={[distancia]} onValueChange={([v]) => setDistancia(v)} />
+          <Slider min={30} max={250} step={5} value={[distancia]} onValueChange={([v]) => setDistancia(v)} />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>20 km</span><span>500 km</span>
+            <span>30 km</span><span>250 km</span>
           </div>
         </div>
 
@@ -133,9 +186,9 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
             </div>
             <span className="text-lg font-bold text-primary">{desnivel.toLocaleString("es-CL")} m D+</span>
           </div>
-          <Slider min={0} max={6000} step={100} value={[desnivel]} onValueChange={([v]) => setDesnivel(v)} />
+          <Slider min={0} max={4000} step={100} value={[desnivel]} onValueChange={([v]) => setDesnivel(v)} />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>0 m</span><span>6,000 m</span>
+            <span>0 m</span><span>4,000 m</span>
           </div>
         </div>
 
@@ -149,31 +202,82 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
         </div>
       </motion.div>
 
-      {/* Secciones */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-          Secciones sugeridas
-        </p>
-        <div className="space-y-2">
-          {etapas.map((etapa, i) => (
-            <motion.div
-              key={etapa.id}
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.05 + i * 0.04 }}
-              className="bg-card border border-border rounded-xl p-3 flex items-center gap-3"
-            >
-              <div className="w-8 h-8 rounded-lg gradient-energy text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
-                {etapa.id}
-              </div>
-              <div>
-                <p className="font-medium text-xs">Sección {etapa.id}</p>
-                <p className="text-[10px] text-muted-foreground">{etapa.km} km</p>
-              </div>
-            </motion.div>
-          ))}
+      {/* Fecha y hora */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Fecha y hora de salida</p>
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+          {/* Calendario 3 semanas */}
+          <div className="grid grid-cols-7 gap-1">
+            {diasSemana.map((d) => (
+              <div key={d} className="text-center text-[10px] text-muted-foreground font-medium pb-1">{d}</div>
+            ))}
+            {/* Offset inicial */}
+            {Array.from({ length: days[0].getDay() }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {days.map((d) => (
+              <button
+                key={toISO(d)}
+                onClick={() => setFecha(d)}
+                className={`aspect-square rounded-lg text-[11px] font-medium transition-all flex flex-col items-center justify-center leading-none gap-0.5
+                  ${isSelected(d) ? "gradient-energy text-primary-foreground" : isToday(d) ? "border border-primary text-primary" : "text-foreground active:bg-muted"}`}
+              >
+                <span>{d.getDate()}</span>
+                {isToday(d) && !isSelected(d) && <span className="text-[8px] text-primary">hoy</span>}
+              </button>
+            ))}
+          </div>
+          {/* Fecha seleccionada + hora */}
+          <div className="flex items-center justify-between pt-1 border-t border-border">
+            <span className="text-xs text-muted-foreground">
+              {fecha.getDate()} {meses[fecha.getMonth()]} · {diasSemana[fecha.getDay()]}
+            </span>
+            <input
+              type="time"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+              className="text-xs font-semibold bg-muted rounded-lg px-2 py-1 border-0 outline-none"
+            />
+          </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Clima */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Condiciones</p>
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
+          {!coords ? (
+            <p className="text-xs text-muted-foreground">Activa la ubicación para ver el clima</p>
+          ) : !weather ? (
+            <p className="text-xs text-muted-foreground">Sin datos de clima para esta fecha</p>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Thermometer className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-bold">{weather.temp}°C</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CloudRain className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-bold">{weather.precip}% lluvia</span>
+                </div>
+              </div>
+              {weather.temp > 28 && (
+                <div className="flex items-center gap-2 bg-primary/10 rounded-xl px-3 py-2">
+                  <Droplets className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="text-xs text-primary font-medium">Día caluroso — agrega 1 bidón extra de agua</span>
+                </div>
+              )}
+              {weather.precip > 60 && (
+                <div className="flex items-center gap-2 bg-accent/10 rounded-xl px-3 py-2">
+                  <CloudRain className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span className="text-xs text-accent font-medium">Lluvia probable — considera ropa impermeable</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </motion.div>
 
       <div className="flex gap-2 pb-2">
         <button
