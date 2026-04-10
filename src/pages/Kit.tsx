@@ -49,7 +49,7 @@ function NoRoute() {
 const Kit = () => {
   const route = getRoute();
   const [selectedCarbs, setSelectedCarbs] = useState<CarbTarget>(getKitConfig());
-  const [expandedSection, setExpandedSection] = useState<number | null>(null);
+  const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["maillot"]));
 
   if (!route) return (
@@ -188,7 +188,7 @@ const Kit = () => {
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
               <button
-                onClick={() => setExpandedSection(expandedSection === si ? null : si)}
+                onClick={() => setOpenSections(prev => { const n = new Set(prev); n.has(si) ? n.delete(si) : n.add(si); return n; })}
                 className="w-full gradient-energy px-4 py-3 flex items-center justify-between"
               >
                 <span className="text-primary-foreground font-semibold text-xs">
@@ -196,12 +196,12 @@ const Kit = () => {
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-primary-foreground transition-transform ${
-                    expandedSection === si ? "rotate-180" : ""
+                    openSections.has(si) ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
-              {expandedSection === si && (
+              {openSections.has(si) && (
                 <div className="divide-y divide-border/50">
                   {section.items.map((item, i) => {
                     const location = item.storage === "ruta"

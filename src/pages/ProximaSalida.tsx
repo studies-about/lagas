@@ -128,10 +128,14 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
   const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}
-    );
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setCoords({ lat: -33.45, lng: -70.67 }) // fallback: Santiago
+      );
+    } else {
+      setCoords({ lat: -33.45, lng: -70.67 });
+    }
   }, []);
 
   useEffect(() => {

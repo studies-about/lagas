@@ -126,7 +126,7 @@ const Perfil = () => {
             <h2 className="font-semibold text-sm">Datos del ciclista</h2>
           </div>
           {!editing ? (
-            <button onClick={() => { setDraft({}); setEditing(true); }} className="flex items-center gap-1 text-xs text-primary">
+            <button onClick={() => { setDraft({ cyclist_type: profile?.cyclist_type, age_range: profile?.age_range, weekly_km: profile?.weekly_km, dietary_type: profile?.dietary_type }); setEditing(true); }} className="flex items-center gap-1 text-xs text-primary">
               <Pencil className="w-3 h-3" /> Editar
             </button>
           ) : (
