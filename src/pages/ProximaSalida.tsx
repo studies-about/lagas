@@ -375,7 +375,7 @@ const ProximaSalida = () => {
 
   function handleGoogleAction() {
     if (googleConnected) {
-      setMode("google");
+      setMode("manual");
     } else {
       connectGoogle();
     }
