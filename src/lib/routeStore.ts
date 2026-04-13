@@ -1,18 +1,18 @@
 const KEY = "lagas_route";
+const ROUTES_KEY = "lagas_routes";
 
 export interface RouteData {
+  id: string;
   name: string;
-  distancia: number; // km
-  desnivel: number;  // m D+
-  tiempo: string;    // formatted "Xh Ym"
+  distancia: number;
+  desnivel: number;
+  tiempo: string;
   source: "manual" | "strava";
-  fecha?: string;    // ISO date "YYYY-MM-DD"
-  hora?: string;     // "HH:MM"
+  fecha?: string;
+  hora?: string;
 }
 
-export function saveRoute(data: RouteData) {
-  localStorage.setItem(KEY, JSON.stringify(data));
-}
+// ─── ruta activa (para Kit, Calculadora, Compras) ─────────────────────────
 
 export function getRoute(): RouteData | null {
   const raw = localStorage.getItem(KEY);
@@ -20,11 +20,52 @@ export function getRoute(): RouteData | null {
   try { return JSON.parse(raw); } catch { return null; }
 }
 
+export function setActiveRoute(route: RouteData) {
+  localStorage.setItem(KEY, JSON.stringify(route));
+}
+
 export function clearRoute() {
   localStorage.removeItem(KEY);
 }
 
-// ─── kit config ──────────────────────────────────────────────────────────────
+// ─── array de rutas ──────────────────────────────────────────────────────
+
+export function getRoutes(): RouteData[] {
+  const raw = localStorage.getItem(ROUTES_KEY);
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+export function getRoutesSorted(): RouteData[] {
+  return [...getRoutes()].sort((a, b) => {
+    if (!a.fecha && !b.fecha) return 0;
+    if (!a.fecha) return 1;
+    if (!b.fecha) return -1;
+    const da = new Date(`${a.fecha}T${a.hora ?? "00:00"}`).getTime();
+    const db = new Date(`${b.fecha}T${b.hora ?? "00:00"}`).getTime();
+    return da - db;
+  });
+}
+
+export function saveRoute(data: Omit<RouteData, "id"> & { id?: string }): RouteData {
+  const route: RouteData = { ...data, id: data.id ?? crypto.randomUUID() };
+  const routes = getRoutes();
+  const idx = routes.findIndex(r => r.id === route.id);
+  if (idx >= 0) routes[idx] = route;
+  else routes.push(route);
+  localStorage.setItem(ROUTES_KEY, JSON.stringify(routes));
+  setActiveRoute(route);
+  return route;
+}
+
+export function deleteRoute(id: string) {
+  const routes = getRoutes().filter(r => r.id !== id);
+  localStorage.setItem(ROUTES_KEY, JSON.stringify(routes));
+  const active = getRoute();
+  if (active?.id === id) clearRoute();
+}
+
+// ─── kit config ──────────────────────────────────────────────────────────
 
 export type CarbTarget = "45-60 g/h" | "60-90 g/h" | "90+ g/h";
 
@@ -46,7 +87,7 @@ export const carbRates: Record<CarbTarget, number> = {
   "90+ g/h": 100,
 };
 
-// ─── kit calculation (shared) ─────────────────────────────────────────────────
+// ─── kit calculation ─────────────────────────────────────────────────────
 
 export type KitItem = { name: string; qty: string; weight: number; storage: "llevar" | "ruta" };
 
@@ -83,7 +124,7 @@ export function buildSectionItems(sectionKm: number, sectionDesnivel: number, ca
   return items;
 }
 
-// ─── shared helpers ──────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────
 
 export function estimarTiempo(km: number, desnivel: number): string {
   if (km === 0) return "—";
@@ -100,4 +141,29 @@ export function generarSecciones(km: number) {
     id: i + 1,
     km: i === num - 1 ? km - base * i : base,
   }));
+}
+
+// ─── compras progress ────────────────────────────────────────────────────
+
+const COMPRAS_KEY = "lagas_compras_status";
+
+export interface ComprasStatus {
+  checked: number;
+  total: number;
+}
+
+export function saveComprasProgress(routeId: string, checked: number, total: number) {
+  const raw = localStorage.getItem(COMPRAS_KEY);
+  const all: Record<string, ComprasStatus> = raw ? JSON.parse(raw) : {};
+  all[routeId] = { checked, total };
+  localStorage.setItem(COMPRAS_KEY, JSON.stringify(all));
+}
+
+export function getComprasStatus(routeId: string): ComprasStatus | null {
+  const raw = localStorage.getItem(COMPRAS_KEY);
+  if (!raw) return null;
+  try {
+    const all: Record<string, ComprasStatus> = JSON.parse(raw);
+    return all[routeId] ?? null;
+  } catch { return null; }
 }
