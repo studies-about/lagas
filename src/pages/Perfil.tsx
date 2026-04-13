@@ -33,14 +33,46 @@ const Perfil = () => {
       .select("name, email, avatar_url, cyclist_type, age_range, weekly_km, dietary_type")
       .eq("id", user.id)
       .single()
-      .then(({ data }) => setProfile(data));
+      .then(({ data }) => {
+        if (data) {
+          setProfile(data);
+        } else {
+          // Sin fila aún — inicializar con datos de Google
+          setProfile({
+            name: user.user_metadata?.full_name ?? null,
+            email: user.email ?? null,
+            avatar_url: user.user_metadata?.avatar_url ?? null,
+            cyclist_type: null,
+            age_range: null,
+            weekly_km: null,
+            dietary_type: null,
+          });
+        }
+      });
   }, [user]);
 
   async function handleSave() {
     if (!user) return;
     setSaving(true);
-    await supabase.from("profiles").upsert({ id: user.id, ...draft }, { onConflict: "id" });
-    setProfile((p) => p ? { ...p, ...draft } : p);
+
+    const fullProfile = {
+      id: user.id,
+      name: profile?.name ?? user.user_metadata?.full_name ?? null,
+      email: profile?.email ?? user.email ?? null,
+      avatar_url: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
+      cyclist_type: draft.cyclist_type ?? profile?.cyclist_type ?? null,
+      age_range: draft.age_range ?? profile?.age_range ?? null,
+      weekly_km: draft.weekly_km ?? profile?.weekly_km ?? null,
+      dietary_type: draft.dietary_type ?? profile?.dietary_type ?? null,
+    };
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(fullProfile, { onConflict: "id" });
+
+    if (!error) {
+      setProfile(fullProfile);
+    }
     setEditing(false);
     setSaving(false);
   }
