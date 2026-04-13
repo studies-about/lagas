@@ -154,7 +154,10 @@ export interface ComprasStatus {
 
 export function saveComprasProgress(routeId: string, checked: number, total: number) {
   const raw = localStorage.getItem(COMPRAS_KEY);
-  const all: Record<string, ComprasStatus> = raw ? JSON.parse(raw) : {};
+  let all: Record<string, ComprasStatus> = {};
+  if (raw) {
+    try { all = JSON.parse(raw); } catch { /* start fresh on corrupt data */ }
+  }
   all[routeId] = { checked, total };
   localStorage.setItem(COMPRAS_KEY, JSON.stringify(all));
 }
