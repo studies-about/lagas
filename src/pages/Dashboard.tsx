@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
-import { Bike, MapPin, Mountain, Clock, Package, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bike, MapPin, Mountain, Clock, Package, ArrowRight, X } from "lucide-react";
+import { useState } from "react";
 
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sa"];
@@ -11,7 +12,7 @@ function formatFecha(iso: string) {
 }
 import { useNavigate } from "react-router-dom";
 import {
-  getRoutesSorted, setActiveRoute, RouteData,
+  getRoutesSorted, setActiveRoute, deleteRoute, RouteData,
   buildSectionItems, generarSecciones, getKitConfig,
   getComprasStatus,
 } from "@/lib/routeStore";
@@ -50,9 +51,69 @@ function KitBadge({ route }: { route: RouteData }) {
   );
 }
 
+function DeleteModal({ route, onConfirm, onCancel }: {
+  route: RouteData;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      {/* Sheet */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 40 }}
+        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+        className="relative w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-4"
+      >
+        <div className="flex flex-col items-center text-center gap-2">
+          <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
+            <X className="w-6 h-6 text-destructive" />
+          </div>
+          <h2 className="font-bold text-base">Eliminar ruta</h2>
+          <p className="text-xs text-muted-foreground max-w-[240px]">
+            ¿Eliminar <span className="font-semibold text-foreground">{route.distancia} km
+            {route.fecha ? ` · ${formatFecha(route.fecha).day} ${formatFecha(route.fecha).month}` : ""}</span>?
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-muted py-3 rounded-xl text-sm font-semibold active:opacity-70 transition-opacity"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 bg-destructive text-destructive-foreground py-3 rounded-xl text-sm font-semibold active:opacity-80 transition-opacity"
+          >
+            Eliminar
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const routes = getRoutesSorted();
+  const [routes, setRoutes] = useState<RouteData[]>(getRoutesSorted);
+  const [pendingDelete, setPendingDelete] = useState<RouteData | null>(null);
+
+  function handleDelete(route: RouteData) {
+    deleteRoute(route.id);
+    setRoutes(getRoutesSorted());
+    setPendingDelete(null);
+  }
 
   return (
     <div className="space-y-4">
@@ -80,13 +141,21 @@ const Dashboard = () => {
                   key={r.id}
                   className="snap-start shrink-0 w-[calc(100%-24px)] bg-card border border-border rounded-2xl overflow-hidden"
                 >
-                  <div className="gradient-dark p-4">
+                  <div className="gradient-dark p-4 relative">
+                    {/* Delete button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(r); }}
+                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5 text-primary-foreground/70" />
+                    </button>
+
                     {i === 0 && (
                       <p className="text-primary-foreground/60 text-[10px] font-semibold uppercase tracking-wide mb-2">
                         Próxima Salida
                       </p>
                     )}
-                    <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="grid grid-cols-3 gap-3 mb-3 pr-6">
                       {fecha ? (
                         <div>
                           <p className="text-primary-foreground text-2xl font-bold leading-none">{fecha.day}</p>
@@ -214,6 +283,17 @@ const Dashboard = () => {
           </span>
         </div>
       </motion.div>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {pendingDelete && (
+          <DeleteModal
+            route={pendingDelete}
+            onConfirm={() => handleDelete(pendingDelete)}
+            onCancel={() => setPendingDelete(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
