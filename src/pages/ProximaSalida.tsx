@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Bike, MapPin, Mountain, Clock, ArrowRight, SlidersHorizontal, Unlink, Droplets, CloudRain, Thermometer } from "lucide-react";
+import { Bike, MapPin, Mountain, Clock, ArrowRight, SlidersHorizontal, Unlink, Droplets, CloudRain, Thermometer, Wind } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/hooks/useAuth";
 import { useStravaAuth } from "@/hooks/useStravaAuth";
@@ -99,6 +99,7 @@ function EmptyState({ onManual, onGoogle, googleConnected }: {
 interface Weather {
   temp: number;
   precip: number;
+  wind: number;
 }
 
 function buildCalendar() {
@@ -124,8 +125,18 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
   const [hora, setHora] = useState(
     `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
   );
-  const [weather, setWeather] = useState<Weather | null>(null);
+  const [hourlyData, setHourlyData] = useState<{ temps: number[]; precips: number[]; winds: number[] } | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  const weather = useMemo<Weather | null>(() => {
+    if (!hourlyData) return null;
+    const h = parseInt(hora.split(":")[0], 10);
+    const temp = hourlyData.temps[h];
+    const precip = hourlyData.precips[h];
+    const wind = hourlyData.winds[h];
+    if (temp == null) return null;
+    return { temp: Math.round(temp), precip: precip ?? 0, wind: Math.round(wind ?? 0) };
+  }, [hourlyData, hora]);
 
   const tiempo = estimarTiempo(distancia, desnivel);
   const days = buildCalendar();
@@ -147,16 +158,17 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
     if (!coords) return;
     const iso = toISO(fecha);
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&daily=temperature_2m_max,precipitation_probability_max&timezone=auto&start_date=${iso}&end_date=${iso}&forecast_days=16`
+      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,precipitation_probability,windspeed_10m&timezone=auto&start_date=${iso}&end_date=${iso}`
     )
       .then((r) => r.json())
       .then((data) => {
-        const temp = data?.daily?.temperature_2m_max?.[0];
-        const precip = data?.daily?.precipitation_probability_max?.[0];
-        if (temp != null) setWeather({ temp: Math.round(temp), precip: precip ?? 0 });
-        else setWeather(null);
+        const temps: number[] = data?.hourly?.temperature_2m ?? [];
+        const precips: number[] = data?.hourly?.precipitation_probability ?? [];
+        const winds: number[] = data?.hourly?.windspeed_10m ?? [];
+        if (temps.length > 0) setHourlyData({ temps, precips, winds });
+        else setHourlyData(null);
       })
-      .catch(() => setWeather(null));
+      .catch(() => setHourlyData(null));
   }, [coords, fecha]);
 
   function handleConfirm() {
@@ -292,7 +304,11 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CloudRain className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-bold">{weather.precip}% lluvia</span>
+                  <span className="text-sm font-bold">{weather.precip}%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Wind className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-bold">{weather.wind} km/h</span>
                 </div>
               </div>
               {weather.temp > 28 && (

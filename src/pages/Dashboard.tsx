@@ -54,9 +54,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const routes = getRoutesSorted();
 
-  const next = routes[0] ?? null;
-  const rest = routes.slice(1);
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -65,101 +62,79 @@ const Dashboard = () => {
         <p className="text-xs text-muted-foreground">Tu nutrición para cada salida</p>
       </motion.div>
 
-      {/* Card 1: Próxima Salida */}
+      {/* Card 1: Rutas en carrusel de cards apiladas */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="bg-card border border-border rounded-2xl overflow-hidden"
       >
-        {next ? (
-          <>
-            <div className="gradient-dark p-4">
-              <p className="text-primary-foreground/60 text-[10px] font-semibold uppercase tracking-wide mb-2">Próxima Salida</p>
-
-              {/* Datos clave prominentes */}
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {next.fecha ? (() => {
-                  const { day, month, dayName } = formatFecha(next.fecha);
-                  return (
-                    <div>
-                      <p className="text-primary-foreground text-2xl font-bold leading-none">{day}</p>
-                      <p className="text-primary-foreground/80 text-sm font-semibold">{month}</p>
-                      <p className="text-primary-foreground/40 text-[10px]">{dayName}{next.hora ? ` · ${next.hora}` : ""}</p>
+        {routes.length > 0 ? (
+          <div
+            className="overflow-x-auto snap-x snap-mandatory -mx-4 px-4 flex gap-3 pb-1"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {routes.map((r, i) => {
+              const fecha = r.fecha ? formatFecha(r.fecha) : null;
+              return (
+                <div
+                  key={r.id}
+                  className="snap-start shrink-0 w-[calc(100%-24px)] bg-card border border-border rounded-2xl overflow-hidden"
+                >
+                  <div className="gradient-dark p-4">
+                    {i === 0 && (
+                      <p className="text-primary-foreground/60 text-[10px] font-semibold uppercase tracking-wide mb-2">
+                        Próxima Salida
+                      </p>
+                    )}
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      {fecha ? (
+                        <div>
+                          <p className="text-primary-foreground text-2xl font-bold leading-none">{fecha.day}</p>
+                          <p className="text-primary-foreground/80 text-sm font-semibold">{fecha.month}</p>
+                          <p className="text-primary-foreground/40 text-[10px]">{fecha.dayName}{r.hora ? ` · ${r.hora}` : ""}</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-primary-foreground/40 text-xs italic">Sin fecha</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-primary-foreground text-2xl font-bold leading-none">{r.distancia}</p>
+                        <p className="text-primary-foreground/80 text-sm font-semibold">km</p>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <MapPin className="w-2.5 h-2.5 text-primary-foreground/40" />
+                          <span className="text-primary-foreground/40 text-[10px]">distancia</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-primary-foreground text-2xl font-bold leading-none">{(r.desnivel / 1000).toFixed(r.desnivel < 1000 ? 0 : 1)}</p>
+                        <p className="text-primary-foreground/80 text-sm font-semibold">km D+</p>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <Mountain className="w-2.5 h-2.5 text-primary-foreground/40" />
+                          <span className="text-primary-foreground/40 text-[10px]">desnivel</span>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })() : (
-                  <div>
-                    <p className="text-primary-foreground/40 text-xs italic">Sin fecha</p>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3 h-3 text-primary-foreground/40 shrink-0" />
+                      <span className="text-primary-foreground/60 text-xs">{r.tiempo}</span>
+                      <span className="ml-auto"><KitBadge route={r} /></span>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <p className="text-primary-foreground text-2xl font-bold leading-none">{next.distancia}</p>
-                  <p className="text-primary-foreground/80 text-sm font-semibold">km</p>
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    <MapPin className="w-2.5 h-2.5 text-primary-foreground/40" />
-                    <span className="text-primary-foreground/40 text-[10px]">distancia</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-primary-foreground text-2xl font-bold leading-none">{(next.desnivel / 1000).toFixed(next.desnivel < 1000 ? 0 : 1)}</p>
-                  <p className="text-primary-foreground/80 text-sm font-semibold">km D+</p>
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    <Mountain className="w-2.5 h-2.5 text-primary-foreground/40" />
-                    <span className="text-primary-foreground/40 text-[10px]">desnivel</span>
+                  <div className="p-4">
+                    <button
+                      onClick={() => { setActiveRoute(r); navigate("/kit"); }}
+                      className="w-full gradient-energy text-primary-foreground py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                    >
+                      Completa tu nutrición <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Clock className="w-3 h-3 text-primary-foreground/40 shrink-0" />
-                <span className="text-primary-foreground/60 text-xs">{next.tiempo}</span>
-                <span className="ml-auto"><KitBadge route={next} /></span>
-              </div>
-            </div>
-            <div className="p-4">
-              <button
-                onClick={() => { setActiveRoute(next); navigate("/kit"); }}
-                className="w-full gradient-energy text-primary-foreground py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-              >
-                Completa tu nutrición <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Carousel de rutas adicionales */}
-            {rest.length > 0 && (
-              <div className="border-t border-border px-4 pb-4 pt-3">
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-2">
-                  Otras salidas
-                </p>
-                <div className="overflow-x-auto -mx-4 px-4">
-                  <div className="flex gap-2.5 pb-1" style={{ width: "max-content" }}>
-                    {rest.map((r) => (
-                      <button
-                        key={r.id}
-                        onClick={() => { setActiveRoute(r); navigate("/kit"); }}
-                        className="w-44 bg-background border border-border rounded-xl overflow-hidden flex-shrink-0 text-left active:scale-[0.97] transition-transform"
-                      >
-                        <div className="gradient-dark px-3 py-2">
-                          <p className="text-primary-foreground font-semibold text-xs truncate">{r.name}</p>
-                          <div className="flex gap-2 mt-0.5">
-                            <span className="text-primary-foreground/60 text-[10px]">{r.distancia} km</span>
-                            {r.fecha && <span className="text-primary-foreground/50 text-[10px]">{r.fecha}</span>}
-                          </div>
-                        </div>
-                        <div className="px-3 py-2 flex items-center justify-between">
-                          <KitBadge route={r} />
-                          <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+              );
+            })}
+          </div>
         ) : (
-          <div className="p-6 flex flex-col items-center text-center gap-3">
+          <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
               <Bike className="w-6 h-6 text-muted-foreground" />
             </div>
