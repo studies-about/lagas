@@ -103,18 +103,18 @@ const Dashboard = () => {
             <Package className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h2 className="font-bold text-sm">LAGAS Planes</h2>
-            <p className="text-xs text-muted-foreground">Kits y suscripciones para brevets</p>
+            <h2 className="font-bold text-sm">LAGAS</h2>
+            <p className="text-xs text-muted-foreground">Kits y suscripciones</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="bg-muted/50 rounded-xl p-3 text-center opacity-50">
-            <p className="text-xs font-bold">Randonneur</p>
+          <div className="bg-muted rounded-xl p-3 text-center opacity-50">
+            <p className="text-xs font-bold">Kit salida</p>
             <p className="text-[10px] text-muted-foreground">$19.900/mes</p>
           </div>
-          <div className="gradient-dark rounded-xl p-3 text-center border border-primary/30 opacity-50">
-            <p className="text-xs font-bold text-primary-foreground">Super Randonneur</p>
-            <p className="text-[10px] text-primary-foreground/60">$34.900/mes</p>
+          <div className="gradient-energy rounded-xl p-3 text-center">
+            <p className="text-xs font-bold text-white">Suscripción</p>
+            <p className="text-[10px] text-white/60">$34.900/mes</p>
           </div>
         </div>
         <div className="relative">
