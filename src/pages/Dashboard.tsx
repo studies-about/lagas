@@ -57,7 +57,7 @@ function DeleteModal({ route, onConfirm, onCancel }: {
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -68,9 +68,9 @@ function DeleteModal({ route, onConfirm, onCancel }: {
       />
       {/* Sheet */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 400, damping: 32 }}
         className="relative w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-4"
       >
