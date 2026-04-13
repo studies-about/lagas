@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Home, User, Bike, Package, ShoppingCart, Calculator } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRef } from "react";
 
 const navItems = [
-  { to: "/", icon: Home, label: "Home" },
+  { to: "/", icon: Home, label: "LAGAS" },
   { to: "/perfil", icon: User, label: "Perfil" },
   { to: "/salida", icon: Bike, label: "Salida" },
   { to: "/kit", icon: Package, label: "Kit" },
@@ -11,14 +12,45 @@ const navItems = [
   { to: "/calculadora", icon: Calculator, label: "Nutrición" },
 ];
 
+const pathOrder = ["/", "/perfil", "/salida", "/kit", "/compras", "/calculadora"];
+
+const pageVariants = {
+  enter: (dir: number) => ({ x: dir >= 0 ? "100%" : "-100%" }),
+  center: { x: 0 },
+  exit: (dir: number) => ({ x: dir >= 0 ? "-100%" : "100%" }),
+};
+
 const AppLayout = () => {
   const location = useLocation();
+  const prevPath = useRef(location.pathname);
+
+  const currentIndex = pathOrder.indexOf(location.pathname);
+  const prevIndex = pathOrder.indexOf(prevPath.current);
+  // 1 = going right, -1 = going left, 0 = same (fallback)
+  const direction = currentIndex === prevIndex ? 0 : currentIndex > prevIndex ? 1 : -1;
+
+  // Update ref after computing direction (runs after render)
+  const pathForRef = location.pathname;
+  setTimeout(() => { prevPath.current = pathForRef; }, 0);
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-background relative">
-      {/* Main content — scrollable area above bottom nav */}
-      <main className="flex-1 overflow-y-auto pb-20 px-4 pt-4">
-        <Outlet />
+      {/* Main content — clips sliding pages */}
+      <main className="flex-1 relative overflow-hidden">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+          <motion.div
+            key={location.pathname}
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0 overflow-y-auto px-4 pt-4 pb-24"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Bottom tab bar */}
@@ -55,7 +87,6 @@ const AppLayout = () => {
             );
           })}
         </div>
-        {/* Safe area for phones with home indicator */}
         <div className="h-safe-bottom" />
       </nav>
     </div>

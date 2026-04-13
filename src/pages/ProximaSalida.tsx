@@ -477,7 +477,7 @@ const ProximaSalida = () => {
   const navigate = useNavigate();
   const { isConnected: googleConnected, connect: connectGoogle } = useAuth();
   const { token: stravaToken, disconnect: disconnectStrava } = useStravaAuth();
-  const [mode, setMode] = useState<Mode>("empty");
+  const [mode, setMode] = useState<Mode>("manual");
 
   const subtitles: Record<Mode, string> = {
     empty: "Planifica tu nutrición para esta ruta",
@@ -506,23 +506,15 @@ const ProximaSalida = () => {
           <h1 className="text-xl font-bold mb-1">Próxima Salida</h1>
           <p className="text-xs text-muted-foreground">{subtitles[mode]}</p>
         </div>
-        {mode !== "empty" && (
+        {mode === "strava" && (
           <button
-            onClick={() => setMode("empty")}
+            onClick={() => setMode("manual")}
             className="text-xs text-muted-foreground active:text-foreground transition-colors"
           >
-            Cambiar
+            Manual
           </button>
         )}
       </motion.div>
-
-      {mode === "empty" && (
-        <EmptyState
-          onManual={() => setMode("manual")}
-          onGoogle={handleGoogleAction}
-          googleConnected={googleConnected}
-        />
-      )}
 
       {mode === "manual" && (
         <ManualView

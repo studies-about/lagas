@@ -52,7 +52,7 @@ const Kit = () => {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["maillot"]));
   const [bidonCount, setBidonCount] = useState<1 | 2>(1);
-  const [bidonSize, setBidonSize] = useState<550 | 750>(750);
+  const [bidonSize, setBidonSize] = useState<550 | 650 | 750>(750);
 
   if (!route) return (
     <div className="space-y-4">
@@ -189,7 +189,7 @@ const Kit = () => {
           ))}
         </div>
         <div className="flex gap-2">
-          {([550, 750] as const).map((ml) => (
+          {([550, 650, 750] as const).map((ml) => (
             <button
               key={ml}
               onClick={() => setBidonSize(ml)}
@@ -223,11 +223,8 @@ const Kit = () => {
         </p>
         <div className="space-y-2">
           {sections.map((section, si) => (
-            <motion.div
-              key={`${selectedCarbs}-${si}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: si * 0.05 }}
+            <div
+              key={si}
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
               <button
@@ -250,7 +247,7 @@ const Kit = () => {
                     const location = item.storage === "ruta"
                       ? "En control"
                       : item.name.includes("Bidón")
-                        ? (selectedStorage.has("frame") ? "Frame bag" : "Maillot")
+                        ? "Frame bag"
                         : item.name.includes("Barrita")
                           ? (selectedStorage.has("frame") ? "Frame bag" : selectedStorage.has("maillot") ? "Maillot" : "Top tube")
                           : selectedStorage.has("maillot")
@@ -274,7 +271,7 @@ const Kit = () => {
                   })}
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
