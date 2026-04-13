@@ -51,6 +51,8 @@ const Kit = () => {
   const [selectedCarbs, setSelectedCarbs] = useState<CarbTarget>(getKitConfig());
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["maillot"]));
+  const [bidonCount, setBidonCount] = useState<1 | 2>(1);
+  const [bidonSize, setBidonSize] = useState<550 | 750>(750);
 
   if (!route) return (
     <div className="space-y-4">
@@ -67,7 +69,11 @@ const Kit = () => {
     name: `Sección ${s.id}`,
     km: s.km,
     desnivel: Math.round(route.desnivel * (s.km / route.distancia)),
-    items: buildSectionItems(s.km, Math.round(route.desnivel * (s.km / route.distancia)), selectedCarbs),
+    items: buildSectionItems(s.km, Math.round(route.desnivel * (s.km / route.distancia)), selectedCarbs).map((item) =>
+      item.name === "Bidón isotónico"
+        ? { ...item, qty: bidonCount === 1 ? `${bidonSize} ml` : `2×${bidonSize} ml`, weight: bidonCount * bidonSize }
+        : item
+    ),
   }));
 
   const totalWeight = sections.reduce(
@@ -127,7 +133,7 @@ const Kit = () => {
           {carbOptions.map((opt) => (
             <button
               key={opt}
-              onClick={() => { setSelectedCarbs(opt); saveKitConfig(opt); setExpandedSection(0); }}
+              onClick={() => { setSelectedCarbs(opt); saveKitConfig(opt); }}
               className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
                 selectedCarbs === opt
                   ? "gradient-energy text-primary-foreground"
@@ -162,6 +168,43 @@ const Kit = () => {
         </div>
       </motion.div>
 
+      {/* Bidones */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}>
+        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+          Bidones
+        </p>
+        <div className="flex gap-2 mb-2">
+          {([1, 2] as const).map((n) => (
+            <button
+              key={n}
+              onClick={() => setBidonCount(n)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                bidonCount === n
+                  ? "gradient-energy text-primary-foreground"
+                  : "bg-card border border-border active:border-primary"
+              }`}
+            >
+              {n} bidón{n === 2 ? "es" : ""}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          {([550, 750] as const).map((ml) => (
+            <button
+              key={ml}
+              onClick={() => setBidonSize(ml)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                bidonSize === ml
+                  ? "gradient-energy text-primary-foreground"
+                  : "bg-card border border-border active:border-primary"
+              }`}
+            >
+              {ml} ml
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Peso total */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -188,7 +231,7 @@ const Kit = () => {
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
               <button
-                onClick={() => setOpenSections(prev => { const n = new Set(prev); n.has(si) ? n.delete(si) : n.add(si); return n; })}
+                onClick={() => setOpenSections(prev => { const n = new Set(prev); if (n.has(si)) n.delete(si); else n.add(si); return n; })}
                 className="w-full gradient-energy px-4 py-3 flex items-center justify-between"
               >
                 <span className="text-primary-foreground font-semibold text-xs">

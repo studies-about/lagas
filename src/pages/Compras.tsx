@@ -106,7 +106,7 @@ const Compras = () => {
     }, { onConflict: "user_id,strava_id" });
     setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => navigate("/"), 1500);
   }
 
   return (

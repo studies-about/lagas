@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { Bike, MapPin, Package, ArrowRight } from "lucide-react";
+import { Bike, MapPin, Mountain, Clock, Package, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const proximaSalida = null; // reemplazar con datos reales cuando estén disponibles
+import { getRoute } from "@/lib/routeStore";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const route = getRoute();
 
   return (
     <div className="space-y-4">
@@ -25,14 +25,30 @@ const Dashboard = () => {
         transition={{ delay: 0.05 }}
         className="bg-card border border-border rounded-2xl overflow-hidden"
       >
-        {proximaSalida ? (
+        {route ? (
           <>
             <div className="gradient-dark p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-primary-foreground font-bold text-sm">Próxima Salida</h2>
+              <h2 className="text-primary-foreground font-bold text-sm mb-1">Próxima Salida</h2>
+              <p className="text-primary-foreground/90 text-sm font-medium">{route.name}</p>
+              <div className="flex gap-3 mt-2">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-primary-foreground/60" />
+                  <span className="text-primary-foreground/60 text-xs">{route.distancia} km</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Mountain className="w-3 h-3 text-primary-foreground/60" />
+                  <span className="text-primary-foreground/60 text-xs">{route.desnivel.toLocaleString("es-CL")} m</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-primary-foreground/60" />
+                  <span className="text-primary-foreground/60 text-xs">{route.tiempo}</span>
+                </div>
               </div>
-              <p className="text-primary-foreground/90 text-sm font-medium">{proximaSalida.nombre}</p>
-              <p className="text-primary-foreground/60 text-xs mt-1">{proximaSalida.detalle}</p>
+              {route.fecha && (
+                <p className="text-primary-foreground/50 text-xs mt-1">
+                  {route.fecha}{route.hora ? ` · ${route.hora}` : ""}
+                </p>
+              )}
               <div className="mt-3">
                 <span className="text-xs px-2.5 py-1 rounded-full bg-primary/20 text-primary font-medium">
                   ⏳ Kit pendiente

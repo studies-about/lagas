@@ -118,7 +118,10 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
   const [distancia, setDistancia] = useState(100);
   const [desnivel, setDesnivel] = useState(1000);
   const [fecha, setFecha] = useState<Date>(new Date());
-  const [hora, setHora] = useState("08:00");
+  const now = new Date();
+  const [hora, setHora] = useState(
+    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+  );
   const [weather, setWeather] = useState<Weather | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 

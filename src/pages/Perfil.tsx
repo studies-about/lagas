@@ -39,7 +39,7 @@ const Perfil = () => {
   async function handleSave() {
     if (!user) return;
     setSaving(true);
-    await supabase.from("profiles").update(draft).eq("id", user.id);
+    await supabase.from("profiles").upsert({ id: user.id, ...draft }, { onConflict: "id" });
     setProfile((p) => p ? { ...p, ...draft } : p);
     setEditing(false);
     setSaving(false);
