@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ShoppingCart, Store, CheckCircle2, Save, CheckCheck } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getRoute, getKitConfig, generarSecciones, buildSectionItems } from "@/lib/routeStore";
+import { getRoute, getKitConfig, generarSecciones, buildSectionItems, saveComprasProgress } from "@/lib/routeStore";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -83,8 +83,14 @@ const Compras = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const toggle = (id: number) =>
-    setItems(items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)));
+  const toggle = (id: number) => {
+    const newItems = items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it));
+    setItems(newItems);
+    if (route?.id) {
+      const newChecked = newItems.filter((i) => i.checked).length;
+      saveComprasProgress(route.id, newChecked, newItems.length);
+    }
+  };
 
   const checked = items.filter((i) => i.checked).length;
 
