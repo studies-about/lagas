@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ShoppingCart, Store, CheckCircle2, Save, CheckCheck } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getRoute, getKitConfig, generarSecciones, buildSectionItems, saveComprasProgress } from "@/lib/routeStore";
+import { getRoute, getKitConfig, generarSecciones, buildSectionItems, saveComprasProgress, saveComprasChecked, getComprasChecked } from "@/lib/routeStore";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -78,7 +78,13 @@ const Compras = () => {
   const carbTarget = getKitConfig();
   const { user } = useAuth();
 
-  const initial = route ? buildShoppingList(route.distancia, route.desnivel, carbTarget) : [];
+  const initial = route
+    ? (() => {
+        const list = buildShoppingList(route.distancia, route.desnivel, carbTarget);
+        const checked = new Set(getComprasChecked(route.id));
+        return list.map(it => ({ ...it, checked: checked.has(it.name) }));
+      })()
+    : [];
   const [items, setItems] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -89,6 +95,7 @@ const Compras = () => {
     if (route?.id) {
       const newChecked = newItems.filter((i) => i.checked).length;
       saveComprasProgress(route.id, newChecked, newItems.length);
+      saveComprasChecked(route.id, newItems.filter((i) => i.checked).map((i) => i.name));
     }
   };
 

@@ -170,3 +170,22 @@ export function getComprasStatus(routeId: string): ComprasStatus | null {
     return all[routeId] ?? null;
   } catch { return null; }
 }
+
+const COMPRAS_CHECKED_KEY = "lagas_compras_checked";
+
+export function saveComprasChecked(routeId: string, checkedNames: string[]) {
+  const raw = localStorage.getItem(COMPRAS_CHECKED_KEY);
+  let all: Record<string, string[]> = {};
+  if (raw) { try { all = JSON.parse(raw); } catch { /* ignore */ } }
+  all[routeId] = checkedNames;
+  localStorage.setItem(COMPRAS_CHECKED_KEY, JSON.stringify(all));
+}
+
+export function getComprasChecked(routeId: string): string[] {
+  const raw = localStorage.getItem(COMPRAS_CHECKED_KEY);
+  if (!raw) return [];
+  try {
+    const all: Record<string, string[]> = JSON.parse(raw);
+    return all[routeId] ?? [];
+  } catch { return []; }
+}
