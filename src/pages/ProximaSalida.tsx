@@ -160,7 +160,7 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
   }, [coords, fecha]);
 
   function handleConfirm() {
-    saveRoute({ name: "Ruta manual", distancia, desnivel, tiempo, source: "manual", fecha: toISO(fecha), hora });
+    saveRoute({ name: "Ruta", distancia, desnivel, tiempo, source: "manual", fecha: toISO(fecha), hora });
     onConfirm();
   }
 
@@ -169,6 +169,30 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
 
   return (
     <div className="space-y-4">
+      {/* Resumen prominente */}
+      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+        className="gradient-dark rounded-2xl px-4 py-4"
+      >
+        <div className="grid grid-cols-3 divide-x divide-white/10 text-center">
+          <div className="pr-3">
+            <p className="text-2xl font-bold text-primary-foreground leading-none">{distancia}</p>
+            <p className="text-[10px] text-primary-foreground/50 mt-1">km</p>
+          </div>
+          <div className="px-3">
+            <p className="text-2xl font-bold text-primary-foreground leading-none">
+              {desnivel.toLocaleString("es-CL")}
+            </p>
+            <p className="text-[10px] text-primary-foreground/50 mt-1">m D+</p>
+          </div>
+          <div className="pl-3">
+            <p className="text-xl font-bold text-primary-foreground leading-none">
+              {fecha.getDate()} {meses[fecha.getMonth()].charAt(0).toUpperCase() + meses[fecha.getMonth()].slice(1)}
+            </p>
+            <p className="text-[10px] text-primary-foreground/50 mt-1">{diasSemana[fecha.getDay()]}</p>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Sliders */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
         {/* Distancia */}
@@ -288,16 +312,10 @@ function ManualView({ onBack, onConfirm }: { onBack: () => void; onConfirm: () =
         </div>
       </motion.div>
 
-      <div className="flex gap-2 pb-2">
-        <button
-          onClick={onBack}
-          className="flex-1 bg-card border border-border py-3 rounded-xl text-sm font-semibold active:border-primary transition-colors"
-        >
-          Cancelar
-        </button>
+      <div className="pb-2">
         <button
           onClick={handleConfirm}
-          className="flex-[2] gradient-energy text-primary-foreground py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          className="w-full gradient-energy text-primary-foreground py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
           Armar kit <ArrowRight className="w-4 h-4" />
         </button>

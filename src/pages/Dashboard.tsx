@@ -1,5 +1,14 @@
 import { motion } from "framer-motion";
 import { Bike, MapPin, Mountain, Clock, Package, ArrowRight } from "lucide-react";
+
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const DIAS  = ["Do","Lu","Ma","Mi","Ju","Vi","Sa"];
+
+function formatFecha(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return { day: d, month: MESES[m - 1], dayName: DIAS[date.getDay()] };
+}
 import { useNavigate } from "react-router-dom";
 import {
   getRoutesSorted, setActiveRoute, RouteData,
@@ -66,29 +75,46 @@ const Dashboard = () => {
         {next ? (
           <>
             <div className="gradient-dark p-4">
-              <h2 className="text-primary-foreground font-bold text-sm mb-1">Próxima Salida</h2>
-              <p className="text-primary-foreground/90 text-sm font-medium">{next.name}</p>
-              <div className="flex gap-3 mt-2">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/60 text-xs">{next.distancia} km</span>
+              <p className="text-primary-foreground/60 text-[10px] font-semibold uppercase tracking-wide mb-2">Próxima Salida</p>
+
+              {/* Datos clave prominentes */}
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {next.fecha ? (() => {
+                  const { day, month, dayName } = formatFecha(next.fecha);
+                  return (
+                    <div>
+                      <p className="text-primary-foreground text-2xl font-bold leading-none">{day}</p>
+                      <p className="text-primary-foreground/80 text-sm font-semibold">{month}</p>
+                      <p className="text-primary-foreground/40 text-[10px]">{dayName}{next.hora ? ` · ${next.hora}` : ""}</p>
+                    </div>
+                  );
+                })() : (
+                  <div>
+                    <p className="text-primary-foreground/40 text-xs italic">Sin fecha</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-primary-foreground text-2xl font-bold leading-none">{next.distancia}</p>
+                  <p className="text-primary-foreground/80 text-sm font-semibold">km</p>
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <MapPin className="w-2.5 h-2.5 text-primary-foreground/40" />
+                    <span className="text-primary-foreground/40 text-[10px]">distancia</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Mountain className="w-3 h-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/60 text-xs">{next.desnivel.toLocaleString("es-CL")} m</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/60 text-xs">{next.tiempo}</span>
+                <div>
+                  <p className="text-primary-foreground text-2xl font-bold leading-none">{(next.desnivel / 1000).toFixed(next.desnivel < 1000 ? 0 : 1)}</p>
+                  <p className="text-primary-foreground/80 text-sm font-semibold">km D+</p>
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <Mountain className="w-2.5 h-2.5 text-primary-foreground/40" />
+                    <span className="text-primary-foreground/40 text-[10px]">desnivel</span>
+                  </div>
                 </div>
               </div>
-              {next.fecha && (
-                <p className="text-primary-foreground/50 text-xs mt-1">
-                  {next.fecha}{next.hora ? ` · ${next.hora}` : ""}
-                </p>
-              )}
-              <div className="mt-3">
-                <KitBadge route={next} />
+
+              <div className="flex items-center gap-2">
+                <Clock className="w-3 h-3 text-primary-foreground/40 shrink-0" />
+                <span className="text-primary-foreground/60 text-xs">{next.tiempo}</span>
+                <span className="ml-auto"><KitBadge route={next} /></span>
               </div>
             </div>
             <div className="p-4">

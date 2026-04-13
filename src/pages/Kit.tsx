@@ -10,7 +10,7 @@ import {
 const carbOptions: CarbTarget[] = ["45-60 g/h", "60-90 g/h", "90+ g/h"];
 
 const storageOptions = [
-  { key: "maillot", label: "Bolsillos maillot" },
+  { key: "tricota", label: "Tricota" },
   { key: "frame", label: "Frame bag" },
   { key: "toptube", label: "Top tube bag" },
 ];
@@ -50,7 +50,7 @@ const Kit = () => {
   const route = getRoute();
   const [selectedCarbs, setSelectedCarbs] = useState<CarbTarget>(getKitConfig());
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
-  const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["maillot"]));
+  const [selectedStorage, setSelectedStorage] = useState<Set<string>>(new Set(["tricota"]));
   const [bidonCount, setBidonCount] = useState<1 | 2>(1);
   const [bidonSize, setBidonSize] = useState<550 | 650 | 750>(750);
 
@@ -106,9 +106,9 @@ const Kit = () => {
       >
         <div className="gradient-dark px-4 py-2.5 flex items-center justify-between">
           <p className="text-primary-foreground font-semibold text-xs truncate">{route.name}</p>
-          <span className="text-[10px] text-primary-foreground/50 shrink-0 ml-2">
-            {route.source === "strava" ? "Strava" : "Manual"}
-          </span>
+          {route.source === "strava" && (
+            <span className="text-[10px] text-primary-foreground/50 shrink-0 ml-2">Strava</span>
+          )}
         </div>
         <div className="grid grid-cols-3 divide-x divide-border">
           {[
@@ -247,11 +247,11 @@ const Kit = () => {
                     const location = item.storage === "ruta"
                       ? "En control"
                       : item.name.includes("Bidón")
-                        ? "Frame bag"
+                        ? "Frame"
                         : item.name.includes("Barrita")
-                          ? (selectedStorage.has("frame") ? "Frame bag" : selectedStorage.has("maillot") ? "Maillot" : "Top tube")
-                          : selectedStorage.has("maillot")
-                            ? "Maillot"
+                          ? (selectedStorage.has("frame") ? "Frame bag" : selectedStorage.has("tricota") ? "Tricota" : "Top tube")
+                          : selectedStorage.has("tricota")
+                            ? "Tricota"
                             : selectedStorage.has("toptube")
                               ? "Top tube"
                               : "Frame bag";
